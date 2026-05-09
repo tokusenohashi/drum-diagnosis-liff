@@ -20,6 +20,21 @@ const LIFF_ID = "YOUR_LIFF_ID";
 
 ローカル確認だけなら、このままでも診断機能は動きます。
 
+## LINE送信機能
+
+結果画面の「結果をLINEに送る」ボタンは、LIFF内で開いた場合のみ表示されます。LIFF外の通常ブラウザで開いた場合は非表示になります。
+
+送信にはLIFFの `liff.sendMessages()` を使っています。LINE DevelopersのLIFF設定で、スコープに `chat_message.write` を含めてください。
+
+送信される内容は以下です。
+
+- ドラム打ち込み診断結果
+- スコア
+- レベル
+- デモ音源URL
+
+`liff.sendMessages()` は、LIFFアプリを開いたトークルームへユーザーのメッセージとして送信します。最近使用したサービスから再表示された場合など、LINE側の条件によって送信できないケースがあります。
+
 ## Vercel公開手順
 
 このアプリはHTML/CSS/Vanilla JavaScriptのみで構成されているため、Vercelでは静的サイトとして公開できます。Firebaseやサーバー処理は不要です。
@@ -60,4 +75,5 @@ const LIFF_ID = "YOUR_LIFF_ID";
 - ボタンタップで次へ進む
 - Q6のデモ音源URLはスコア対象外
 - 合計16点満点で結果を表示
+- LIFF内では結果をLINEトークへ送信
 - LIFF内では「LINEに戻る」で `liff.closeWindow()` を実行

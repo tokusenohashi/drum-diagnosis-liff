@@ -54,7 +54,13 @@
           <p class="level" id="level-value"></p>
           <p class="description" id="description-value"></p>
         </div>
-        <button class="primary-button" type="button" id="close-button">LINEに戻る</button>
+        <div class="result-actions">
+          <button class="primary-button line-send-button is-hidden" type="button" id="send-line-button">
+            結果をLINEに送る
+          </button>
+          <p class="send-status" id="send-status" role="status"></p>
+          <button class="secondary-button" type="button" id="close-button">LINEに戻る</button>
+        </div>
       </section>
     </main>
   </body>

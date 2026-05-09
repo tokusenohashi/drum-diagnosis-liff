@@ -130,6 +130,13 @@ legend {
     background 160ms ease;
 }
 
+.primary-button:disabled,
+.secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+  transform: none;
+}
+
 .primary-button {
   background: var(--accent);
   color: #ffffff;
@@ -306,6 +313,24 @@ fieldset {
   margin: 0;
   color: var(--muted);
   line-height: 1.8;
+}
+
+.result-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.send-status {
+  min-height: 22px;
+  margin: 0;
+  color: var(--accent-dark);
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.send-status.is-error {
+  color: var(--warning);
 }
 
 @keyframes fadeUp {

@@ -90,6 +90,8 @@ const state = {
   currentIndex: 0,
   answers: {},
   liffReady: false,
+  canSendLineMessage: false,
+  latestResult: null,
 };
 
 const startScreen = document.querySelector("#start-screen");
@@ -107,6 +109,8 @@ const nextButton = document.querySelector("#next-button");
 const scoreValue = document.querySelector("#score-value");
 const levelValue = document.querySelector("#level-value");
 const descriptionValue = document.querySelector("#description-value");
+const sendLineButton = document.querySelector("#send-line-button");
+const sendStatus = document.querySelector("#send-status");
 const closeButton = document.querySelector("#close-button");
 
 initLiff();
@@ -150,17 +154,26 @@ closeButton.addEventListener("click", () => {
   showScreen(startScreen);
 });
 
+sendLineButton.addEventListener("click", () => {
+  sendResultToLine();
+});
+
 async function initLiff() {
   if (!window.liff || LIFF_ID === "YOUR_LIFF_ID") {
+    updateLineSendButton();
     return;
   }
 
   try {
     await window.liff.init({ liffId: LIFF_ID });
     state.liffReady = true;
+    state.canSendLineMessage = window.liff.isInClient() && typeof window.liff.sendMessages === "function";
   } catch (error) {
     console.warn("LIFF initialization failed:", error);
+    state.canSendLineMessage = false;
   }
+
+  updateLineSendButton();
 }
 
 function showScreen(screen) {
@@ -278,11 +291,59 @@ function renderResult() {
     return sum + (state.answers[question.id]?.score ?? 0);
   }, 0);
   const result = results.find((item) => totalScore >= item.min && totalScore <= item.max);
+  const demoUrl = state.answers.demoUrl?.value || "未入力";
 
   scoreValue.textContent = `${totalScore} / ${MAX_SCORE}`;
   levelValue.textContent = result.level;
   descriptionValue.textContent = result.description;
+  sendStatus.textContent = "";
+  sendStatus.classList.remove("is-error");
+  state.latestResult = {
+    score: totalScore,
+    level: result.level,
+    demoUrl,
+  };
+  updateLineSendButton();
   showScreen(resultScreen);
+}
+
+function updateLineSendButton() {
+  sendLineButton.classList.toggle("is-hidden", !state.canSendLineMessage);
+  sendLineButton.disabled = !state.canSendLineMessage || !state.latestResult;
+}
+
+async function sendResultToLine() {
+  if (!state.canSendLineMessage || !state.latestResult) {
+    return;
+  }
+
+  const { score, level, demoUrl } = state.latestResult;
+  const text = [
+    "ドラム打ち込み診断結果",
+    `スコア：${score}点 / ${MAX_SCORE}点`,
+    `レベル：${level}`,
+    `デモ音源URL：${demoUrl}`,
+  ].join("\n");
+
+  sendLineButton.disabled = true;
+  sendStatus.classList.remove("is-error");
+  sendStatus.textContent = "送信中です...";
+
+  try {
+    await window.liff.sendMessages([
+      {
+        type: "text",
+        text,
+      },
+    ]);
+    sendStatus.textContent = "送信しました";
+  } catch (error) {
+    console.warn("LINE message send failed:", error);
+    sendStatus.classList.add("is-error");
+    sendStatus.textContent = "送信できませんでした。LINE内で開いているか確認してください。";
+  } finally {
+    sendLineButton.disabled = false;
+  }
 }
 
 function escapeHtml(value) {
