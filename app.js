@@ -1,4 +1,4 @@
-const LIFF_ID = "YOUR_LIFF_ID";
+const LIFF_ID = "2010023428-VY1mVGIW";
 const MAX_SCORE = 16;
 
 const questions = [
