@@ -1,18 +1,18 @@
 const LIFF_ID = "2010023428-YY1mVGIW";
 const EXPECTED_LIFF_ID = "2010023428-YY1mVGIW";
 const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyqjgz3aq2ZPSyRAB7f0wJ5fIpCL6QR8jumHPL-nBfJg4Wom8XP3ywK4-VlogJ8JGFC/exec";
-const MAX_SCORE = 16;
+const MAX_SCORE = 15;
 
 const questions = [
   {
     id: "q1",
     title: "楽器演奏経験は？",
     options: [
+      { label: "バンド", score: 3 },
+      { label: "吹奏楽", score: 3 },
+      { label: "ピアノ/エレクトーン", score: 2 },
+      { label: "弾き語り", score: 2 },
       { label: "未経験", score: 0 },
-      { label: "少しだけ", score: 1 },
-      { label: "1年以上", score: 2 },
-      { label: "バンド/吹奏楽経験あり", score: 3 },
-      { label: "現在も演奏している", score: 4 },
     ],
   },
   {
@@ -53,36 +53,30 @@ const questions = [
       { label: "Yes", score: 3 },
     ],
   },
-  {
-    id: "demoUrl",
-    title: "現状のデモ音源URL",
-    type: "text",
-    placeholder: "https://example.com/demo",
-  },
 ];
 
 const results = [
   {
     min: 0,
-    max: 4,
+    max: 3,
     level: "初心者",
     description: "基礎経験がまだ少ない段階です。まずは耳コピと楽器感覚を増やしましょう。",
   },
   {
-    min: 5,
-    max: 8,
+    min: 4,
+    max: 7,
     level: "初級者",
     description: "基本は理解し始めています。再現力を鍛えると大きく伸びます。",
   },
   {
-    min: 9,
-    max: 12,
+    min: 8,
+    max: 11,
     level: "中級者",
     description: "分析・再現の基礎があります。細かい表現力を強化しましょう。",
   },
   {
-    min: 13,
-    max: 16,
+    min: 12,
+    max: 15,
     level: "上級者",
     description: "かなり実践量があります。音色・フィール・ジャンル理解をさらに深めましょう。",
   },
@@ -107,7 +101,6 @@ const choices = document.querySelector("#choices");
 const progressLabel = document.querySelector("#progress-label");
 const progressFill = document.querySelector("#progress-fill");
 const formMessage = document.querySelector("#form-message");
-const profileDebug = document.querySelector("#profile-debug");
 const backButton = document.querySelector("#back-button");
 const nextButton = document.querySelector("#next-button");
 const scoreValue = document.querySelector("#score-value");
@@ -168,13 +161,11 @@ async function initLiff() {
 
   if (liffIdError) {
     console.error(liffIdError);
-    setProfileDebug(liffIdError, true);
     updateLineSendButton();
     return;
   }
 
   if (!window.liff) {
-    setProfileDebug("LIFF外で開かれています");
     updateLineSendButton();
     return;
   }
@@ -194,14 +185,10 @@ async function initLiff() {
     }
 
     state.displayName = await getLineDisplayName();
-    if (state.displayName) {
-      setProfileDebug(`LINE表示名: ${state.displayName}`);
-    }
     state.canSendLineMessage = window.liff.isInClient() && typeof window.liff.sendMessages === "function";
   } catch (error) {
     const message = error?.message || String(error);
     console.error("LIFF initialization failed:", error);
-    setProfileDebug(`LIFF初期化失敗: ${message}`, true);
     state.canSendLineMessage = false;
   }
 
@@ -218,11 +205,6 @@ function getLiffIdError() {
   }
 
   return "";
-}
-
-function setProfileDebug(message, isError = false) {
-  profileDebug.textContent = message;
-  profileDebug.classList.toggle("is-error", isError);
 }
 
 function showScreen(screen) {
@@ -242,11 +224,6 @@ function renderQuestion() {
   questionTitle.textContent = question.title;
   backButton.textContent = state.currentIndex === 0 ? "戻る" : "前へ";
   nextButton.textContent = state.currentIndex === questions.length - 1 ? "結果を見る" : "次へ";
-
-  if (question.type === "text") {
-    renderTextInput(question);
-    return;
-  }
 
   renderChoices(question);
 }
@@ -274,34 +251,8 @@ function renderChoices(question) {
     .join("");
 }
 
-function renderTextInput(question) {
-  const savedValue = state.answers[question.id]?.value ?? "";
-
-  choices.innerHTML = `
-    <input
-      class="url-input"
-      id="${question.id}"
-      name="${question.id}"
-      type="text"
-      inputmode="url"
-      placeholder="${question.placeholder}"
-      value="${escapeHtml(savedValue)}"
-    />
-  `;
-}
-
 function saveCurrentAnswer() {
   const question = questions[state.currentIndex];
-
-  if (question.type === "text") {
-    const input = questionForm.elements[question.id];
-    state.answers[question.id] = {
-      value: input.value.trim(),
-      score: 0,
-    };
-    goNext();
-    return;
-  }
 
   const checkedOption = questionForm.querySelector(`input[name="${question.id}"]:checked`);
 
@@ -340,7 +291,6 @@ function renderResult() {
     return sum + (state.answers[question.id]?.score ?? 0);
   }, 0);
   const result = results.find((item) => totalScore >= item.min && totalScore <= item.max);
-  const demoUrl = state.answers.demoUrl?.value || "未入力";
 
   scoreValue.textContent = `${totalScore} / ${MAX_SCORE}`;
   levelValue.textContent = result.level;
@@ -352,7 +302,6 @@ function renderResult() {
   state.latestResult = {
     score: totalScore,
     level: result.level,
-    demoUrl,
   };
   updateLineSendButton();
   showScreen(resultScreen);
@@ -369,12 +318,11 @@ async function sendResultToLine() {
     return;
   }
 
-  const { score, level, demoUrl } = state.latestResult;
+  const { score, level } = state.latestResult;
   const text = [
     "ドラム打ち込み診断結果",
     `スコア：${score}点 / ${MAX_SCORE}点`,
     `レベル：${level}`,
-    `デモ音源URL：${demoUrl}`,
   ].join("\n");
 
   sendLineButton.disabled = true;
@@ -424,7 +372,6 @@ async function saveResultToSpreadsheet() {
       displayName: state.displayName,
       score: state.latestResult.score,
       level: state.latestResult.level,
-      demoUrl: state.latestResult.demoUrl,
       answers: buildAnswerPayload(),
     };
     console.log("Spreadsheet save payload", payload);
@@ -460,13 +407,9 @@ async function getLineDisplayName() {
   try {
     const profile = await window.liff.getProfile();
     console.log("LINE profile displayName", profile.displayName || "");
-    if (profile.displayName) {
-      setProfileDebug(`LINE表示名: ${profile.displayName}`);
-    }
     return profile.displayName || "";
   } catch (error) {
     console.error("LINE profile fetch failed:", error);
-    setProfileDebug("LINEプロフィール取得失敗", true);
     return "";
   }
 }
@@ -478,21 +421,8 @@ function buildAnswerPayload() {
     return {
       id: question.id,
       question: question.title,
-      answer: question.type === "text" ? answer.value || "" : answer.label || "",
+      answer: answer.label || "",
       score: answer.score ?? 0,
     };
-  });
-}
-
-function escapeHtml(value) {
-  return value.replace(/[&<>"']/g, (char) => {
-    const entities = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;",
-    };
-    return entities[char];
   });
 }
