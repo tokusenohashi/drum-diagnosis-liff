@@ -40,6 +40,8 @@ const GAS_WEB_APP_URL = "YOUR_GAS_WEB_APP_URL";
 
 LIFF外で開いた場合、LINE表示名は空欄で保存されます。
 
+LINE表示名の取得にはLIFFの `profile` スコープが必要です。LINE DevelopersのLIFF設定で `profile` を有効にしてください。
+
 ### Google Apps Script手順
 
 1. Googleスプレッドシートを新規作成します。

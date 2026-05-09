@@ -92,6 +92,7 @@ const state = {
   answers: {},
   liffReady: false,
   canSendLineMessage: false,
+  displayName: "",
   latestResult: null,
 };
 
@@ -115,7 +116,7 @@ const sendLineButton = document.querySelector("#send-line-button");
 const sendStatus = document.querySelector("#send-status");
 const closeButton = document.querySelector("#close-button");
 
-initLiff();
+const liffInitPromise = initLiff();
 
 startButton.addEventListener("click", () => {
   state.currentIndex = 0;
@@ -169,6 +170,13 @@ async function initLiff() {
   try {
     await window.liff.init({ liffId: LIFF_ID });
     state.liffReady = true;
+
+    if (!window.liff.isLoggedIn()) {
+      window.liff.login({ redirectUri: window.location.href });
+      return;
+    }
+
+    state.displayName = await getLineDisplayName();
     state.canSendLineMessage = window.liff.isInClient() && typeof window.liff.sendMessages === "function";
   } catch (error) {
     console.warn("LIFF initialization failed:", error);
@@ -366,9 +374,15 @@ async function saveResultToSpreadsheet() {
   saveStatus.textContent = "保存中です...";
 
   try {
+    await liffInitPromise;
+
+    if (!state.displayName) {
+      state.displayName = await getLineDisplayName();
+    }
+
     const payload = {
       submittedAt: new Date().toISOString(),
-      displayName: await getLineDisplayName(),
+      displayName: state.displayName,
       score: state.latestResult.score,
       level: state.latestResult.level,
       demoUrl: state.latestResult.demoUrl,
@@ -401,7 +415,7 @@ async function getLineDisplayName() {
     const profile = await window.liff.getProfile();
     return profile.displayName || "";
   } catch (error) {
-    console.warn("LINE profile fetch failed:", error);
+    console.error("LINE profile fetch failed:", error);
     return "";
   }
 }
