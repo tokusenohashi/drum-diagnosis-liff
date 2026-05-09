@@ -1,4 +1,5 @@
 const LIFF_ID = "2010023428-VY1mVGIW";
+const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyqjgz3aq2ZPSyRAB7f0wJ5fIpCL6QR8jumHPL-nBfJg4Wom8XP3ywK4-VlogJ8JGFC/exec";
 const MAX_SCORE = 16;
 
 const questions = [
@@ -109,6 +110,7 @@ const nextButton = document.querySelector("#next-button");
 const scoreValue = document.querySelector("#score-value");
 const levelValue = document.querySelector("#level-value");
 const descriptionValue = document.querySelector("#description-value");
+const saveStatus = document.querySelector("#save-status");
 const sendLineButton = document.querySelector("#send-line-button");
 const sendStatus = document.querySelector("#send-status");
 const closeButton = document.querySelector("#close-button");
@@ -296,6 +298,8 @@ function renderResult() {
   scoreValue.textContent = `${totalScore} / ${MAX_SCORE}`;
   levelValue.textContent = result.level;
   descriptionValue.textContent = result.description;
+  saveStatus.textContent = "";
+  saveStatus.classList.remove("is-error");
   sendStatus.textContent = "";
   sendStatus.classList.remove("is-error");
   state.latestResult = {
@@ -305,6 +309,7 @@ function renderResult() {
   };
   updateLineSendButton();
   showScreen(resultScreen);
+  saveResultToSpreadsheet();
 }
 
 function updateLineSendButton() {
@@ -344,6 +349,74 @@ async function sendResultToLine() {
   } finally {
     sendLineButton.disabled = false;
   }
+}
+
+async function saveResultToSpreadsheet() {
+  if (!state.latestResult) {
+    return;
+  }
+
+  if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL === "YOUR_GAS_WEB_APP_URL") {
+    saveStatus.classList.add("is-error");
+    saveStatus.textContent = "保存に失敗しました";
+    return;
+  }
+
+  saveStatus.classList.remove("is-error");
+  saveStatus.textContent = "保存中です...";
+
+  try {
+    const payload = {
+      submittedAt: new Date().toISOString(),
+      displayName: await getLineDisplayName(),
+      score: state.latestResult.score,
+      level: state.latestResult.level,
+      demoUrl: state.latestResult.demoUrl,
+      answers: buildAnswerPayload(),
+    };
+
+    await fetch(GAS_WEB_APP_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    saveStatus.textContent = "結果を保存しました";
+  } catch (error) {
+    console.warn("Spreadsheet save failed:", error);
+    saveStatus.classList.add("is-error");
+    saveStatus.textContent = "保存に失敗しました";
+  }
+}
+
+async function getLineDisplayName() {
+  if (!state.liffReady || !window.liff?.isLoggedIn?.()) {
+    return "";
+  }
+
+  try {
+    const profile = await window.liff.getProfile();
+    return profile.displayName || "";
+  } catch (error) {
+    console.warn("LINE profile fetch failed:", error);
+    return "";
+  }
+}
+
+function buildAnswerPayload() {
+  return questions.map((question) => {
+    const answer = state.answers[question.id] ?? {};
+
+    return {
+      id: question.id,
+      question: question.title,
+      answer: question.type === "text" ? answer.value || "" : answer.label || "",
+      score: answer.score ?? 0,
+    };
+  });
 }
 
 function escapeHtml(value) {
