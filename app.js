@@ -177,12 +177,6 @@ async function initLiff() {
       isLoggedIn: window.liff.isLoggedIn(),
     });
 
-    if (!window.liff.isInClient()) {
-      setProfileDebug("LIFF外で開かれています");
-      state.canSendLineMessage = false;
-      return;
-    }
-
     if (!window.liff.isLoggedIn()) {
       console.log("LIFF user is not logged in. Redirecting to LINE login.");
       window.liff.login({ redirectUri: window.location.href });
@@ -196,7 +190,7 @@ async function initLiff() {
     state.canSendLineMessage = window.liff.isInClient() && typeof window.liff.sendMessages === "function";
   } catch (error) {
     console.warn("LIFF initialization failed:", error);
-    setProfileDebug("LIFF外で開かれています");
+    setProfileDebug("LIFF初期化失敗", true);
     state.canSendLineMessage = false;
   }
 
@@ -430,8 +424,8 @@ async function saveResultToSpreadsheet() {
 }
 
 async function getLineDisplayName() {
-  if (!state.liffReady || !window.liff?.isInClient?.()) {
-    console.log("Skipping LINE profile fetch outside LIFF client.");
+  if (!state.liffReady) {
+    console.log("Skipping LINE profile fetch because LIFF is not ready.");
     return "";
   }
 
