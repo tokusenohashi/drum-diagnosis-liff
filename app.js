@@ -106,6 +106,7 @@ const choices = document.querySelector("#choices");
 const progressLabel = document.querySelector("#progress-label");
 const progressFill = document.querySelector("#progress-fill");
 const formMessage = document.querySelector("#form-message");
+const profileDebug = document.querySelector("#profile-debug");
 const backButton = document.querySelector("#back-button");
 const nextButton = document.querySelector("#next-button");
 const scoreValue = document.querySelector("#score-value");
@@ -163,6 +164,7 @@ sendLineButton.addEventListener("click", () => {
 
 async function initLiff() {
   if (!window.liff || LIFF_ID === "YOUR_LIFF_ID") {
+    setProfileDebug("LIFF外で開かれています");
     updateLineSendButton();
     return;
   }
@@ -176,6 +178,7 @@ async function initLiff() {
     });
 
     if (!window.liff.isInClient()) {
+      setProfileDebug("LIFF外で開かれています");
       state.canSendLineMessage = false;
       return;
     }
@@ -187,13 +190,22 @@ async function initLiff() {
     }
 
     state.displayName = await getLineDisplayName();
+    if (state.displayName) {
+      setProfileDebug(`LINE表示名: ${state.displayName}`);
+    }
     state.canSendLineMessage = window.liff.isInClient() && typeof window.liff.sendMessages === "function";
   } catch (error) {
     console.warn("LIFF initialization failed:", error);
+    setProfileDebug("LIFF外で開かれています");
     state.canSendLineMessage = false;
   }
 
   updateLineSendButton();
+}
+
+function setProfileDebug(message, isError = false) {
+  profileDebug.textContent = message;
+  profileDebug.classList.toggle("is-error", isError);
 }
 
 function showScreen(screen) {
@@ -431,9 +443,13 @@ async function getLineDisplayName() {
   try {
     const profile = await window.liff.getProfile();
     console.log("LINE profile displayName", profile.displayName || "");
+    if (profile.displayName) {
+      setProfileDebug(`LINE表示名: ${profile.displayName}`);
+    }
     return profile.displayName || "";
   } catch (error) {
     console.error("LINE profile fetch failed:", error);
+    setProfileDebug("LINEプロフィール取得失敗", true);
     return "";
   }
 }
