@@ -3,6 +3,8 @@ const SHEET_NAME = "diagnosis_results";
 function doPost(e) {
   const sheet = getSheet();
   const data = JSON.parse(e.postData.contents);
+  console.log("Received payload:", data);
+  console.log("Received displayName:", data.displayName || "");
   const answers = data.answers || [];
   const answerMap = answers.reduce((map, item) => {
     map[item.id] = item.answer || "";

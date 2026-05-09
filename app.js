@@ -170,8 +170,18 @@ async function initLiff() {
   try {
     await window.liff.init({ liffId: LIFF_ID });
     state.liffReady = true;
+    console.log("LIFF initialized", {
+      isInClient: window.liff.isInClient(),
+      isLoggedIn: window.liff.isLoggedIn(),
+    });
+
+    if (!window.liff.isInClient()) {
+      state.canSendLineMessage = false;
+      return;
+    }
 
     if (!window.liff.isLoggedIn()) {
+      console.log("LIFF user is not logged in. Redirecting to LINE login.");
       window.liff.login({ redirectUri: window.location.href });
       return;
     }
@@ -388,6 +398,7 @@ async function saveResultToSpreadsheet() {
       demoUrl: state.latestResult.demoUrl,
       answers: buildAnswerPayload(),
     };
+    console.log("Spreadsheet save payload", payload);
 
     await fetch(GAS_WEB_APP_URL, {
       method: "POST",
@@ -407,12 +418,19 @@ async function saveResultToSpreadsheet() {
 }
 
 async function getLineDisplayName() {
-  if (!state.liffReady || !window.liff?.isLoggedIn?.()) {
+  if (!state.liffReady || !window.liff?.isInClient?.()) {
+    console.log("Skipping LINE profile fetch outside LIFF client.");
+    return "";
+  }
+
+  if (!window.liff.isLoggedIn()) {
+    console.log("Skipping LINE profile fetch because user is not logged in.");
     return "";
   }
 
   try {
     const profile = await window.liff.getProfile();
+    console.log("LINE profile displayName", profile.displayName || "");
     return profile.displayName || "";
   } catch (error) {
     console.error("LINE profile fetch failed:", error);
