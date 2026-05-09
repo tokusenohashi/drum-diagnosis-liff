@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f9f9a" />
+    <title>ドラム打ち込み診断</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js" defer></script>
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <main class="app-shell" aria-live="polite">
+      <section class="panel" id="start-screen">
+        <p class="eyebrow">Drum Programming Check</p>
+        <h1>ドラム打ち込み診断</h1>
+        <div class="intro-copy">
+          <p>これは、今のあなたの立ち位置を知るための診断です。</p>
+          <p>以下の質問にお答えください。</p>
+        </div>
+        <p class="notice">結果は簡易診断です</p>
+        <button class="primary-button" type="button" id="start-button">診断スタート</button>
+      </section>
+
+      <section class="panel is-hidden" id="question-screen">
+        <div class="progress-area">
+          <span class="progress-label" id="progress-label">Q1 / 6</span>
+          <div class="progress-track" aria-hidden="true">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+        </div>
+
+        <form id="question-form">
+          <fieldset>
+            <legend id="question-title"></legend>
+            <div class="choices" id="choices"></div>
+          </fieldset>
+          <p class="form-message" id="form-message" role="alert"></p>
+          <div class="actions">
+            <button class="secondary-button" type="button" id="back-button">戻る</button>
+            <button class="primary-button" type="submit" id="next-button">次へ</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel result-panel is-hidden" id="result-screen">
+        <p class="eyebrow">Your Result</p>
+        <h2>診断結果</h2>
+        <div class="score-card">
+          <span class="score-label">合計スコア</span>
+          <strong id="score-value">0 / 16</strong>
+        </div>
+        <div class="result-content">
+          <p class="level" id="level-value"></p>
+          <p class="description" id="description-value"></p>
+        </div>
+        <button class="primary-button" type="button" id="close-button">LINEに戻る</button>
+      </section>
+    </main>
+  </body>
+</html>

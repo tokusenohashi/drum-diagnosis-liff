@@ -1,0 +1,16 @@
+{
+  "name": "drum-programming-check-liff",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LINE LIFF drum programming diagnosis app built with HTML, CSS, and vanilla JavaScript.",
+  "scripts": {
+    "check": "node --check app.js"
+  },
+  "keywords": [
+    "liff",
+    "line",
+    "vercel",
+    "static-site"
+  ],
+  "license": "UNLICENSED"
+}
