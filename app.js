@@ -1,4 +1,5 @@
-const LIFF_ID = "2010023428-VY1mVGIW";
+const LIFF_ID = "2010023428-YY1mVGIW";
+const EXPECTED_LIFF_ID = "2010023428-YY1mVGIW";
 const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyqjgz3aq2ZPSyRAB7f0wJ5fIpCL6QR8jumHPL-nBfJg4Wom8XP3ywK4-VlogJ8JGFC/exec";
 const MAX_SCORE = 16;
 
@@ -163,7 +164,16 @@ sendLineButton.addEventListener("click", () => {
 });
 
 async function initLiff() {
-  if (!window.liff || LIFF_ID === "YOUR_LIFF_ID") {
+  const liffIdError = getLiffIdError();
+
+  if (liffIdError) {
+    console.error(liffIdError);
+    setProfileDebug(liffIdError, true);
+    updateLineSendButton();
+    return;
+  }
+
+  if (!window.liff) {
     setProfileDebug("LIFF外で開かれています");
     updateLineSendButton();
     return;
@@ -189,12 +199,25 @@ async function initLiff() {
     }
     state.canSendLineMessage = window.liff.isInClient() && typeof window.liff.sendMessages === "function";
   } catch (error) {
-    console.warn("LIFF initialization failed:", error);
-    setProfileDebug("LIFF初期化失敗", true);
+    const message = error?.message || String(error);
+    console.error("LIFF initialization failed:", error);
+    setProfileDebug(`LIFF初期化失敗: ${message}`, true);
     state.canSendLineMessage = false;
   }
 
   updateLineSendButton();
+}
+
+function getLiffIdError() {
+  if (!LIFF_ID || LIFF_ID === "YOUR_LIFF_ID") {
+    return "LIFF IDが未設定です";
+  }
+
+  if (LIFF_ID !== EXPECTED_LIFF_ID) {
+    return `LIFF IDが違います: ${LIFF_ID}`;
+  }
+
+  return "";
 }
 
 function setProfileDebug(message, isError = false) {
